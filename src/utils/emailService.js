@@ -1,4 +1,5 @@
 import SibApiV3Sdk from 'sib-api-v3-sdk';
+import User from '../models/User.js';
 
 // Initialize Brevo client
 const getBrevoInstance = () => {
@@ -405,6 +406,10 @@ export const sendTicketAdminNotify = async (ticket, customer) => {
       return { success: true, skipped: true };
     }
 
+    // Get admin name
+    const adminUser = await User.findOne({ email: recipient, role: 'manager' }).select('name');
+    const adminName = adminUser?.name || 'Admin';
+
     const createdDate = ticket.createdAt 
       ? new Date(ticket.createdAt).toLocaleDateString('en-US', { 
           year: 'numeric', 
@@ -432,7 +437,7 @@ export const sendTicketAdminNotify = async (ticket, customer) => {
             <img src="${process.env.APP_URL}/uploads/email.png" alt="Expand Machinery" style="max-width: 200px; height: auto; margin-bottom: 15px;" />
           </div>
           
-          <h2 style="color: #1f2937; font-size: 24px; margin-bottom: 20px; font-weight: 600;">Hello Admin,</h2>
+          <h2 style="color: #1f2937; font-size: 24px; margin-bottom: 20px; font-weight: 600;">Hello ${adminName},</h2>
           
           <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin-bottom: 25px;">
             A new support ticket has been created and requires your attention.
@@ -572,6 +577,10 @@ export const sendAdminRegistrationEmail = async ({ name, email, phone, registrat
       return { success: true, skipped: true };
     }
 
+    // Get admin name
+    const adminUser = await User.findOne({ email: adminEmail, role: 'manager' }).select('name');
+    const adminName = adminUser?.name || 'Admin';
+
     const formattedDate = registrationDate 
       ? new Date(registrationDate).toLocaleDateString('en-US', { 
           year: 'numeric', 
@@ -603,7 +612,7 @@ export const sendAdminRegistrationEmail = async ({ name, email, phone, registrat
             <img src="${process.env.APP_URL}/uploads/email.png" alt="Expand Machinery" style="max-width: 200px; height: auto; margin-bottom: 15px;" />
           </div>
           
-          <h2 style="color: #1f2937; font-size: 24px; margin-bottom: 20px; font-weight: 600;">Hello Admin,</h2>
+          <h2 style="color: #1f2937; font-size: 24px; margin-bottom: 20px; font-weight: 600;">Hello ${adminName},</h2>
           
           <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin-bottom: 25px;">
             A new customer has successfully registered on the Expand Machinery platform.
@@ -657,10 +666,6 @@ export const sendAdminRegistrationEmail = async ({ name, email, phone, registrat
     return { success: false, error: error.message };
   }
 };
-
-
-
-
 
 export const buildReportIssueAdminEmail = ({
   reportId,
@@ -730,8 +735,6 @@ export const buildReportIssueUserEmail = ({ reportId, name, email, phone, descri
   `;
   return { subject, html };
 };
-
-
 
 export const sendTicketUpdateStatusEmail = async (ticket, customer) => {
   try {
@@ -1065,6 +1068,10 @@ export const sendTicketStatusChangeAdminEmail = async (ticket, customer, changed
       return { success: true, skipped: true };
     }
 
+    // Get admin name
+    const adminUser = await User.findOne({ email: adminEmail, role: 'manager' }).select('name');
+    const adminName = adminUser?.name || 'Admin';
+
     const status = ticket.status?.toLowerCase() || 'pending';
     const ticketNumber = ticket.ticketNumber || ticket._id;
     const customerName = customer?.name || 'N/A';
@@ -1095,7 +1102,7 @@ export const sendTicketStatusChangeAdminEmail = async (ticket, customer, changed
                 <img src="${process.env.APP_URL}/uploads/email.png" alt="Expand Machinery" style="max-width: 200px; height: auto; margin-bottom: 15px;" />
               </div>
               
-              <h2 style="color: #1f2937; font-size: 24px; margin-bottom: 20px; font-weight: 600;">Hello Admin,</h2>
+              <h2 style="color: #1f2937; font-size: 24px; margin-bottom: 20px; font-weight: 600;">Hello ${adminName},</h2>
               
               <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin-bottom: 25px;">
                 A support ticket has been marked as <strong>Pending</strong> and is awaiting further action.
@@ -1171,7 +1178,7 @@ export const sendTicketStatusChangeAdminEmail = async (ticket, customer, changed
                 <img src="${process.env.APP_URL}/uploads/email.png" alt="Expand Machinery" style="max-width: 200px; height: auto; margin-bottom: 15px;" />
               </div>
               
-              <h2 style="color: #1f2937; font-size: 24px; margin-bottom: 20px; font-weight: 600;">Hello Admin,</h2>
+              <h2 style="color: #1f2937; font-size: 24px; margin-bottom: 20px; font-weight: 600;">Hello ${adminName},</h2>
               
               <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin-bottom: 25px;">
                 A support ticket has been picked up and marked as <strong>In Progress</strong>.
@@ -1226,7 +1233,7 @@ export const sendTicketStatusChangeAdminEmail = async (ticket, customer, changed
                 <img src="${process.env.APP_URL}/uploads/email.png" alt="Expand Machinery" style="max-width: 200px; height: auto; margin-bottom: 15px;" />
               </div>
               
-              <h2 style="color: #1f2937; font-size: 24px; margin-bottom: 20px; font-weight: 600;">Hello Admin,</h2>
+              <h2 style="color: #1f2937; font-size: 24px; margin-bottom: 20px; font-weight: 600;">Hello ${adminName},</h2>
               
               <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin-bottom: 25px;">
                 A support ticket has been successfully <strong>Resolved</strong>.
@@ -1288,7 +1295,7 @@ export const sendTicketStatusChangeAdminEmail = async (ticket, customer, changed
                 <img src="${process.env.APP_URL}/uploads/email.png" alt="Expand Machinery" style="max-width: 200px; height: auto; margin-bottom: 15px;" />
               </div>
               
-              <h2 style="color: #1f2937; font-size: 24px; margin-bottom: 20px; font-weight: 600;">Hello Admin,</h2>
+              <h2 style="color: #1f2937; font-size: 24px; margin-bottom: 20px; font-weight: 600;">Hello ${adminName},</h2>
               
               <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin-bottom: 25px;">
                 The following support ticket has been <strong>Closed</strong>.
@@ -1344,7 +1351,7 @@ export const sendTicketStatusChangeAdminEmail = async (ticket, customer, changed
                 <img src="${process.env.APP_URL}/uploads/email.png" alt="Expand Machinery" style="max-width: 200px; height: auto; margin-bottom: 15px;" />
               </div>
               
-              <h2 style="color: #1f2937; font-size: 24px; margin-bottom: 20px; font-weight: 600;">Hello Admin,</h2>
+              <h2 style="color: #1f2937; font-size: 24px; margin-bottom: 20px; font-weight: 600;">Hello ${adminName},</h2>
               
               <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin-bottom: 25px;">
                 A previously closed ticket has been <strong>Reopened</strong> by the customer or support team.
@@ -1403,7 +1410,7 @@ export const sendTicketStatusChangeAdminEmail = async (ticket, customer, changed
                 <img src="${process.env.APP_URL}/uploads/email.png" alt="Expand Machinery" style="max-width: 200px; height: auto; margin-bottom: 15px;" />
               </div>
               
-              <h2 style="color: #1f2937; font-size: 24px; margin-bottom: 20px; font-weight: 600;">Hello Admin,</h2>
+              <h2 style="color: #1f2937; font-size: 24px; margin-bottom: 20px; font-weight: 600;">Hello ${adminName},</h2>
               
               <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin-bottom: 25px;">
                 A support ticket status has been updated.
