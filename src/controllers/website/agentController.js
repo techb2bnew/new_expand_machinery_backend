@@ -64,7 +64,7 @@ export const createAgent = async (req, res) => {
       const emailHtml = `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px;">
           <div style="text-align: center; margin-bottom: 24px;">
-            <h1 style="color: #7c3aed; font-size: 28px; margin-bottom: 8px;">Expand Machinery</h1>
+            <img src="${process.env.APP_URL}/uploads/email.png" alt="Expand Machinery" style="max-width: 200px; height: auto; margin-bottom: 15px; display: block; margin-left: auto; margin-right: auto;" />
             <p style="color: #4b5563; font-size: 16px;">Agent Account Created</p>
           </div>
           <div style="background: #f9fafb; padding: 28px; border-radius: 14px; box-shadow: 0 10px 25px rgba(124,58,237,0.08);">
