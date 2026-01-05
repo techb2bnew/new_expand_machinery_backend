@@ -3,18 +3,19 @@ import Notification from '../../models/Notification.js';
 import Ticket from '../../models/Ticket.js';
 import { logActivity } from '../../utils/activityLogger.js';
 import { sendPushNotification } from '../../services/pushNotificationService.js';
+import { sendCustomerWelcomeEmail } from '../../utils/emailService.js';
 
 
 export const createCustomer = async (req, res) => {
   try {
     const { firstName, lastName, name, email, phone, password } = req.body;
 
-    // Handle both firstName+lastName and name fields
+    // Prioritize name field, fallback to firstName+lastName for backward compatibility
     let fullName = '';
-    if (firstName && lastName) {
-      fullName = `${firstName.trim()} ${lastName.trim()}`;
-    } else if (name) {
+    if (name && name.trim()) {
       fullName = name.trim();
+    } else if (firstName && lastName) {
+      fullName = `${firstName.trim()} ${lastName.trim()}`;
     }
 
     if (!fullName || !email || !phone || !password) {
@@ -108,6 +109,27 @@ export const createCustomer = async (req, res) => {
       message: `Customer "${customer.name}" has been added`,
       status: 'added'
     });
+
+    // Send welcome email to the new customer
+    try {
+      console.log('📧 Attempting to send welcome email to:', customer.email);
+      const emailResult = await sendCustomerWelcomeEmail({
+        name: customer.name,
+        email: customer.email,
+        phone: customer.phone
+      });
+      if (emailResult && emailResult.success) {
+        console.log('✅ Welcome email sent successfully to:', customer.email);
+      } else {
+        console.error('❌ Failed to send welcome email. Result:', emailResult);
+        if (emailResult && emailResult.error) {
+          console.error('Email error details:', emailResult.error);
+        }
+      }
+    } catch (emailError) {
+      console.error('❌ Exception while sending welcome email to new customer:', emailError);
+      console.error('Error stack:', emailError.stack);
+    }
 
     // Send push notification to the new customer
     try {
@@ -212,26 +234,15 @@ export const getCustomers = async (req, res) => {
       User.countDocuments(query),
     ]);
 
-    // Split name into firstName and lastName for each customer
-    const customersWithNameParts = customers.map(customer => {
-      const customerObj = customer.toObject();
-      const nameParts = customerObj.name ? customerObj.name.trim().split(/\s+/) : [];
-      const firstName = nameParts.length > 0 ? nameParts[0] : '';
-      const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
-      
-      return {
-        ...customerObj,
-        firstName,
-        lastName
-      };
-    });
+    // Return customers with name field (no need to split into firstName/lastName)
+    const customersList = customers.map(customer => customer.toObject());
 
     res.json({
       page,
       limit,
       total,
       totalPages: Math.ceil(total / limit),
-      customers: customersWithNameParts,
+      customers: customersList,
     });
   } catch (error) {
     console.error('Get customers error:', error);
@@ -262,11 +273,11 @@ export const updateCustomer = async (req, res) => {
       return res.status(404).json({ message: 'Customer not found' });
     }
 
-    // Handle both firstName+lastName and name fields
-    if (firstName && lastName) {
-      customer.name = `${firstName.trim()} ${lastName.trim()}`;
-    } else if (name) {
+    // Prioritize name field, fallback to firstName+lastName for backward compatibility
+    if (name && name.trim()) {
       customer.name = name.trim();
+    } else if (firstName && lastName) {
+      customer.name = `${firstName.trim()} ${lastName.trim()}`;
     }
     if (email) {
       const emailRegex = /^\S+@\S+\.\S+$/;

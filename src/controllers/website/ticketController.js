@@ -8,7 +8,7 @@ import Notification from '../../models/Notification.js';
 import mongoose from 'mongoose';
 import { getIO } from '../../socket/index.js';
 import { logActivity } from '../../utils/activityLogger.js';
-import { sendTicketCreationEmail, sendTicketAdminNotify, sendTicketUpdateStatusEmail } from '../../utils/emailService.js';
+import { sendTicketCreationEmail, sendTicketAdminNotify, sendTicketUpdateStatusEmail, sendTicketStatusChangeAdminEmail } from '../../utils/emailService.js';
 import { sendPushNotification } from '../../services/pushNotificationService.js';
 
 export const getTickets = async (req, res) => {
@@ -386,9 +386,19 @@ export const updateTicketStatus = async (req, res) => {
 
       const customerdata = await User.findById(ticket.customer);
       
-
+      // Get user who made the change
+      const changedByUser = await User.findOne({ email: req.user.email }).select('name');
+      
+      // Send email to customer
       const emailResults = await sendTicketUpdateStatusEmail(ticket, customerdata);
       console.log('Email sending results:', emailResults);
+      
+      // Send email to admin about status change
+      try {
+        await sendTicketStatusChangeAdminEmail(ticket, customerdata, changedByUser);
+      } catch (adminEmailError) {
+        console.error('Failed to send admin status change email:', adminEmailError);
+      }
 
 
       if (notificationRecipients.length > 0) {

@@ -400,43 +400,113 @@ export const sendTicketCreationEmail = async (ticket, customer, agents = []) => 
 export const sendTicketAdminNotify = async (ticket, customer) => {
   try {
     const recipient = (process.env.ADMIN_EMAIL || '').trim();
-    if (!recipient) return { success: true, skipped: true };
+    if (!recipient) {
+      console.log('⚠️ ADMIN_EMAIL not configured, skipping admin ticket notification email');
+      return { success: true, skipped: true };
+    }
 
-    const subject = `New Support Ticket - ${ticket.ticketNumber}`;
+    const createdDate = ticket.createdAt 
+      ? new Date(ticket.createdAt).toLocaleDateString('en-US', { 
+          year: 'numeric', 
+          month: 'long', 
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        })
+      : new Date().toLocaleDateString('en-US', { 
+          year: 'numeric', 
+          month: 'long', 
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+
+    const subject = `New Support Ticket Created - ${ticket.ticketNumber}`;
+    
+    console.log('📧 Sending admin ticket notification email to:', recipient);
+
     const html = `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-        <div style="text-align: center; margin-bottom: 30px;">
-          <img src="${process.env.APP_URL}/uploads/email.png" alt="Expand Machinery" style="max-width: 200px; height: auto; margin-bottom: 10px;" />
-        </div>
-        <div style="background-color: #fff3cd; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-          <h2 style="color: #856404; margin: 0;">New Support Ticket Created</h2>
-        </div>
-        <div style="background-color: white; padding: 20px; border: 1px solid #dee2e6; border-radius: 8px;">
-          <h3 style="color: #333; margin-top: 0;">Ticket Information</h3>
-          <p><strong>Ticket Number:</strong> ${ticket.ticketNumber}</p>
-          <p><strong>Customer Name:</strong> ${customer.name}</p>
-          <p><strong>Customer Email:</strong> ${customer.email}</p>
-          <p><strong>Description:</strong> ${ticket.description}</p>
-          <p><strong>Status:</strong> ${ticket.status}</p>
-          <p><strong>Created Date:</strong> ${new Date(ticket.createdAt).toLocaleString()}</p>
-        </div>
-        <div style="text-align: center; margin-top: 30px; color: #666; font-size: 14px;">
-          <p>Expand Machinery Support System</p>
-          <p>This is an automated notification. Please check your admin panel for more details.</p>
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9fafb;">
+        <div style="background-color: #ffffff; border-radius: 12px; padding: 30px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+          <div style="text-align: center; margin-bottom: 30px;">
+            <img src="${process.env.APP_URL}/uploads/email.png" alt="Expand Machinery" style="max-width: 200px; height: auto; margin-bottom: 15px;" />
+          </div>
+          
+          <h2 style="color: #1f2937; font-size: 24px; margin-bottom: 20px; font-weight: 600;">Hello Admin,</h2>
+          
+          <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin-bottom: 25px;">
+            A new support ticket has been created and requires your attention.
+          </p>
+          
+          <div style="background-color: #f9fafb; padding: 20px; border-radius: 8px; margin-bottom: 25px; border-left: 4px solid #7c3aed;">
+            <h3 style="color: #1f2937; font-size: 18px; margin-bottom: 15px; font-weight: 600;">**Ticket Details**</h3>
+            
+            <p style="color: #374151; font-size: 15px; line-height: 1.8; margin: 8px 0;">
+              <strong style="color: #1f2937;">* Ticket Number:</strong> ${ticket.ticketNumber || 'N/A'}
+            </p>
+            
+            <p style="color: #374151; font-size: 15px; line-height: 1.8; margin: 8px 0;">
+              <strong style="color: #1f2937;">* Customer Name:</strong> ${customer.name || 'N/A'}
+            </p>
+            
+            <p style="color: #374151; font-size: 15px; line-height: 1.8; margin: 8px 0;">
+              <strong style="color: #1f2937;">* Customer Email:</strong> ${customer.email || 'N/A'}
+            </p>
+            
+            <p style="color: #374151; font-size: 15px; line-height: 1.8; margin: 8px 0;">
+              <strong style="color: #1f2937;">* Issue Description:</strong>
+            </p>
+            <div style="background-color: #ffffff; padding: 12px; border-radius: 6px; margin: 8px 0 16px 0; border: 1px solid #e5e7eb;">
+              <p style="color: #4b5563; font-size: 14px; line-height: 1.6; margin: 0; white-space: pre-wrap;">${ticket.description || 'No description provided'}</p>
+            </div>
+            
+            <p style="color: #374151; font-size: 15px; line-height: 1.8; margin: 8px 0;">
+              <strong style="color: #1f2937;">* Status:</strong> <span style="text-transform: capitalize;">${ticket.status || 'pending'}</span>
+            </p>
+            
+            <p style="color: #374151; font-size: 15px; line-height: 1.8; margin: 8px 0;">
+              <strong style="color: #1f2937;">* Created On:</strong> ${createdDate}
+            </p>
+          </div>
+          
+          <p style="color: #4b5563; font-size: 15px; line-height: 1.6; margin-bottom: 20px;">
+            Please review the ticket and assign it to the appropriate team member.
+          </p>
+          
+          <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+            <p style="color: #6b7280; font-size: 13px; line-height: 1.6; margin: 0;">
+              This is an automated system notification.<br>
+              Please do not reply to this email.
+            </p>
+          </div>
+          
+          <div style="margin-top: 20px; text-align: center;">
+            <p style="color: #9ca3af; font-size: 12px; margin: 0;">
+              Regards,<br>
+              <strong style="color: #6b7280;">Expand Machinery Support System</strong>
+            </p>
+          </div>
         </div>
       </div>`;
 
-    return await sendEmail(recipient, subject, html);
+    const result = await sendEmail(recipient, subject, html);
+    console.log('📧 Admin ticket notification email result:', result);
+    return result;
   } catch (error) {
-    console.error('Error sending admin notify email:', error);
+    console.error('❌ Error sending admin ticket notification email:', error);
+    console.error('Error details:', error.message, error.stack);
     return { success: false, error: error.message };
   }
 };
 
 export const sendCustomerWelcomeEmail = async ({ name, email, phone }) => {
   try {
-    if (!email) return { success: false, error: 'Missing customer email' };
-    return await sendEmail(
+    if (!email) {
+      console.error('❌ sendCustomerWelcomeEmail: Missing customer email');
+      return { success: false, error: 'Missing customer email' };
+    }
+    console.log('📧 sendCustomerWelcomeEmail: Sending email to', email, 'for customer:', name);
+    const result = await sendEmail(
       email,
       'Welcome to Expand Machinery',
       `<table role="presentation" width="100%" style="max-width:600px;margin:0 auto;font-family:Arial,sans-serif;background:#ffffff;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;">
@@ -485,45 +555,112 @@ export const sendCustomerWelcomeEmail = async ({ name, email, phone }) => {
         </tr>
       </table>`
     );
+    console.log('📧 sendCustomerWelcomeEmail: Email send result:', result);
+    return result;
   } catch (error) {
-    console.error('Failed to send welcome email:', error);
-    return { success: false, error: error.message };
+    console.error('❌ sendCustomerWelcomeEmail: Exception occurred:', error);
+    console.error('Error details:', error.message, error.stack);
+    return { success: false, error: error.message || 'Unknown error' };
   }
 };
 
-export const sendAdminRegistrationEmail = async ({ name, email, phone }) => {
+export const sendAdminRegistrationEmail = async ({ name, email, phone, registrationDate }) => {
   try {
     const adminEmail = process.env.ADMIN_EMAIL?.trim();
-    if (!adminEmail) return { success: true, skipped: true };
+    if (!adminEmail) {
+      console.log('⚠️ ADMIN_EMAIL not configured, skipping admin registration email');
+      return { success: true, skipped: true };
+    }
+
+    const formattedDate = registrationDate 
+      ? new Date(registrationDate).toLocaleDateString('en-US', { 
+          year: 'numeric', 
+          month: 'long', 
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        })
+      : new Date().toLocaleDateString('en-US', { 
+          year: 'numeric', 
+          month: 'long', 
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+
+    const dashboardLink = process.env.FRONTEND_URL 
+      ? `${process.env.FRONTEND_URL}/dashboard/customers`
+      : '#';
+
+    console.log('📧 Sending admin registration email to:', adminEmail);
 
     return await sendEmail(
       adminEmail,
-      'New Customer Registration',
-      `<table role="presentation" width="100%" style="max-width:560px;margin:0 auto;font-family:Arial,sans-serif;background:#ffffff;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
-        <tr>
-          <td style="text-align:center;padding:24px 24px 16px;">
-            <img src="${process.env.APP_URL}/uploads/email.png" alt="Expand Machinery" style="max-width: 200px; height: auto; margin: 0;" />
-          </td>
-        </tr>
-        <tr>
-          <td style="background-color: #fff3cd; color:#856404;padding:18px 22px;font-size:18px;font-weight:600;">New customer registered</td>
-        </tr>
-        <tr>
-          <td style="padding:20px 22px;color:#1e293b;font-size:14px;line-height:1.6;">
-            <p style="margin:0 0 12px;">A new customer signed up via the mobile app:</p>
-            <p style="margin:0 0 6px;"><strong>Name:</strong> ${name || 'N/A'}</p>
-            <p style="margin:0 0 6px;"><strong>Email:</strong> ${email || 'N/A'}</p>
-            <p style="margin:0 0 12px;"><strong>Phone:</strong> ${phone || 'N/A'}</p>
-            <a href="${process.env.FRONTEND_URL || '#'}" style="display:inline-block;margin-top:10px;padding:8px 18px;background:#2563eb;color:#ffffff;text-decoration:none;border-radius:5px;font-weight:600;">View in dashboard</a>
-          </td>
-        </tr>
-      </table>`
+      'New Customer Registration - Expand Machinery',
+      `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9fafb;">
+        <div style="background-color: #ffffff; border-radius: 12px; padding: 30px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+          <div style="text-align: center; margin-bottom: 30px;">
+            <img src="${process.env.APP_URL}/uploads/email.png" alt="Expand Machinery" style="max-width: 200px; height: auto; margin-bottom: 15px;" />
+          </div>
+          
+          <h2 style="color: #1f2937; font-size: 24px; margin-bottom: 20px; font-weight: 600;">Hello Admin,</h2>
+          
+          <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin-bottom: 25px;">
+            A new customer has successfully registered on the Expand Machinery platform.
+          </p>
+          
+          <div style="background-color: #f9fafb; padding: 20px; border-radius: 8px; margin-bottom: 25px; border-left: 4px solid #7c3aed;">
+            <h3 style="color: #1f2937; font-size: 18px; margin-bottom: 15px; font-weight: 600;">**Customer Details**</h3>
+            
+            <p style="color: #374151; font-size: 15px; line-height: 1.8; margin: 8px 0;">
+              <strong style="color: #1f2937;">* Name:</strong> ${name || 'N/A'}
+            </p>
+            
+            <p style="color: #374151; font-size: 15px; line-height: 1.8; margin: 8px 0;">
+              <strong style="color: #1f2937;">* Email:</strong> ${email || 'N/A'}
+            </p>
+            
+            <p style="color: #374151; font-size: 15px; line-height: 1.8; margin: 8px 0;">
+              <strong style="color: #1f2937;">* Phone:</strong> ${phone || 'N/A'}
+            </p>
+            
+            <p style="color: #374151; font-size: 15px; line-height: 1.8; margin: 8px 0;">
+              <strong style="color: #1f2937;">* Registration Date:</strong> ${formattedDate}
+            </p>
+            
+          
+          </div>
+          
+          <p style="color: #4b5563; font-size: 15px; line-height: 1.6; margin-bottom: 20px;">
+            You can review and manage this customer directly from the admin dashboard.
+          </p>
+          
+          <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+            <p style="color: #6b7280; font-size: 13px; line-height: 1.6; margin: 0;">
+              This is an automated notification from the Expand Machinery system.<br>
+              No action is required unless follow-up is needed.
+            </p>
+          </div>
+          
+          <div style="margin-top: 20px; text-align: center;">
+            <p style="color: #9ca3af; font-size: 12px; margin: 0;">
+              Regards,<br>
+              <strong style="color: #6b7280;">Expand Machinery System</strong>
+            </p>
+          </div>
+        </div>
+      </div>`
     );
   } catch (error) {
-    console.error('Failed to send admin registration email:', error);
+    console.error('❌ Failed to send admin registration email:', error);
+    console.error('Error details:', error.message, error.stack);
     return { success: false, error: error.message };
   }
 };
+
+
+
+
 
 export const buildReportIssueAdminEmail = ({
   reportId,
@@ -916,6 +1053,405 @@ export const sendTicketUpdateStatusEmail = async (ticket, customer) => {
     return results;
   } catch (error) {
     console.error('Error sending ticket status update email:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+export const sendTicketStatusChangeAdminEmail = async (ticket, customer, changedBy = null, reason = null) => {
+  try {
+    const adminEmail = process.env.ADMIN_EMAIL?.trim();
+    if (!adminEmail) {
+      console.log('⚠️ ADMIN_EMAIL not configured, skipping admin ticket status change email');
+      return { success: true, skipped: true };
+    }
+
+    const status = ticket.status?.toLowerCase() || 'pending';
+    const ticketNumber = ticket.ticketNumber || ticket._id;
+    const customerName = customer?.name || 'N/A';
+    const customerEmail = customer?.email || 'N/A';
+    
+    const dateObj = new Date(ticket.updatedAt || ticket.createdAt);
+    const formattedDate = dateObj.toLocaleDateString('en-US', { 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+
+    const changedByName = changedBy?.name || 'System';
+    
+    let subject = '';
+    let html = '';
+
+    // Generate email based on status
+    switch (status) {
+      case 'pending':
+        subject = `Ticket Marked as Pending - ${ticketNumber}`;
+        html = `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9fafb;">
+            <div style="background-color: #ffffff; border-radius: 12px; padding: 30px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+              <div style="text-align: center; margin-bottom: 30px;">
+                <img src="${process.env.APP_URL}/uploads/email.png" alt="Expand Machinery" style="max-width: 200px; height: auto; margin-bottom: 15px;" />
+              </div>
+              
+              <h2 style="color: #1f2937; font-size: 24px; margin-bottom: 20px; font-weight: 600;">Hello Admin,</h2>
+              
+              <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin-bottom: 25px;">
+                A support ticket has been marked as <strong>Pending</strong> and is awaiting further action.
+              </p>
+              
+              <div style="background-color: #f9fafb; padding: 20px; border-radius: 8px; margin-bottom: 25px; border-left: 4px solid #f59e0b;">
+                <h3 style="color: #1f2937; font-size: 18px; margin-bottom: 15px; font-weight: 600;">**Ticket Details**</h3>
+                
+                <p style="color: #374151; font-size: 15px; line-height: 1.8; margin: 8px 0;">
+                  <strong style="color: #1f2937;">* Ticket Number:</strong> ${ticketNumber}
+                </p>
+                
+                <p style="color: #374151; font-size: 15px; line-height: 1.8; margin: 8px 0;">
+                  <strong style="color: #1f2937;">* Customer Name:</strong> ${customerName}
+                </p>
+                
+                <p style="color: #374151; font-size: 15px; line-height: 1.8; margin: 8px 0;">
+                  <strong style="color: #1f2937;">* Customer Email:</strong> ${customerEmail}
+                </p>
+                
+                <p style="color: #374151; font-size: 15px; line-height: 1.8; margin: 8px 0;">
+                  <strong style="color: #1f2937;">* Current Status:</strong> <span style="text-transform: capitalize; color: #f59e0b; font-weight: 600;">Pending</span>
+                </p>
+                
+                <p style="color: #374151; font-size: 15px; line-height: 1.8; margin: 8px 0;">
+                  <strong style="color: #1f2937;">* Pending Since:</strong> ${formattedDate}
+                </p>
+              </div>
+              
+              ${reason ? `
+              <div style="background-color: #fef3c7; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #f59e0b;">
+                <h4 style="color: #92400e; font-size: 16px; margin: 0 0 10px 0; font-weight: 600;">**Reason for Pending**</h4>
+                <p style="color: #78350f; font-size: 14px; line-height: 1.6; margin: 0; white-space: pre-wrap;">${reason}</p>
+              </div>
+              ` : ''}
+              
+              <p style="color: #4b5563; font-size: 15px; line-height: 1.6; margin-bottom: 20px;">
+                This ticket may require:
+              </p>
+              
+              <ul style="color: #4b5563; font-size: 15px; line-height: 1.8; margin: 0 0 20px 20px; padding: 0;">
+                <li style="margin-bottom: 8px;">Additional information from the customer, or</li>
+                <li style="margin-bottom: 8px;">Review or action from the support/admin team.</li>
+              </ul>
+              
+              <p style="color: #4b5563; font-size: 15px; line-height: 1.6; margin-bottom: 20px;">
+                Please follow up as necessary to move the ticket forward.
+              </p>
+              
+              <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+                <p style="color: #6b7280; font-size: 13px; line-height: 1.6; margin: 0;">
+                  This is an automated system notification.
+                </p>
+              </div>
+              
+              <div style="margin-top: 20px; text-align: center;">
+                <p style="color: #9ca3af; font-size: 12px; margin: 0;">
+                  Regards,<br>
+                  <strong style="color: #6b7280;">Expand Machinery Support System</strong>
+                </p>
+              </div>
+            </div>
+          </div>`;
+        break;
+
+      case 'in_progress':
+        const assignedAgentName = ticket.assignedAgent ? (typeof ticket.assignedAgent === 'object' ? ticket.assignedAgent.name : 'Agent') : 'Unassigned';
+        subject = `Ticket In Progress - ${ticketNumber}`;
+        html = `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9fafb;">
+            <div style="background-color: #ffffff; border-radius: 12px; padding: 30px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+              <div style="text-align: center; margin-bottom: 30px;">
+                <img src="${process.env.APP_URL}/uploads/email.png" alt="Expand Machinery" style="max-width: 200px; height: auto; margin-bottom: 15px;" />
+              </div>
+              
+              <h2 style="color: #1f2937; font-size: 24px; margin-bottom: 20px; font-weight: 600;">Hello Admin,</h2>
+              
+              <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin-bottom: 25px;">
+                A support ticket has been picked up and marked as <strong>In Progress</strong>.
+              </p>
+              
+              <div style="background-color: #f9fafb; padding: 20px; border-radius: 8px; margin-bottom: 25px; border-left: 4px solid #3b82f6;">
+                <h3 style="color: #1f2937; font-size: 18px; margin-bottom: 15px; font-weight: 600;">**Ticket Information**</h3>
+                
+                <p style="color: #374151; font-size: 15px; line-height: 1.8; margin: 8px 0;">
+                  <strong style="color: #1f2937;">* Ticket Number:</strong> ${ticketNumber}
+                </p>
+                
+                <p style="color: #374151; font-size: 15px; line-height: 1.8; margin: 8px 0;">
+                  <strong style="color: #1f2937;">* Customer Name:</strong> ${customerName}
+                </p>
+                
+                <p style="color: #374151; font-size: 15px; line-height: 1.8; margin: 8px 0;">
+                  <strong style="color: #1f2937;">* Assigned To:</strong> ${assignedAgentName}
+                </p>
+                
+                <p style="color: #374151; font-size: 15px; line-height: 1.8; margin: 8px 0;">
+                  <strong style="color: #1f2937;">* Started On:</strong> ${formattedDate}
+                </p>
+              </div>
+              
+              <p style="color: #4b5563; font-size: 15px; line-height: 1.6; margin-bottom: 20px;">
+                The issue is now actively being worked on.
+              </p>
+              
+              <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+                <p style="color: #6b7280; font-size: 13px; line-height: 1.6; margin: 0;">
+                  This is an automated notification.
+                </p>
+              </div>
+              
+              <div style="margin-top: 20px; text-align: center;">
+                <p style="color: #9ca3af; font-size: 12px; margin: 0;">
+                  Regards,<br>
+                  <strong style="color: #6b7280;">Expand Machinery Support System</strong>
+                </p>
+              </div>
+            </div>
+          </div>`;
+        break;
+
+      case 'resolved':
+        subject = `Ticket Resolved - ${ticketNumber}`;
+        html = `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9fafb;">
+            <div style="background-color: #ffffff; border-radius: 12px; padding: 30px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+              <div style="text-align: center; margin-bottom: 30px;">
+                <img src="${process.env.APP_URL}/uploads/email.png" alt="Expand Machinery" style="max-width: 200px; height: auto; margin-bottom: 15px;" />
+              </div>
+              
+              <h2 style="color: #1f2937; font-size: 24px; margin-bottom: 20px; font-weight: 600;">Hello Admin,</h2>
+              
+              <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin-bottom: 25px;">
+                A support ticket has been successfully <strong>Resolved</strong>.
+              </p>
+              
+              <div style="background-color: #f9fafb; padding: 20px; border-radius: 8px; margin-bottom: 25px; border-left: 4px solid #10b981;">
+                <h3 style="color: #1f2937; font-size: 18px; margin-bottom: 15px; font-weight: 600;">**Ticket Summary**</h3>
+                
+                <p style="color: #374151; font-size: 15px; line-height: 1.8; margin: 8px 0;">
+                  <strong style="color: #1f2937;">* Ticket Number:</strong> ${ticketNumber}
+                </p>
+                
+                <p style="color: #374151; font-size: 15px; line-height: 1.8; margin: 8px 0;">
+                  <strong style="color: #1f2937;">* Customer Name:</strong> ${customerName}
+                </p>
+                
+                <p style="color: #374151; font-size: 15px; line-height: 1.8; margin: 8px 0;">
+                  <strong style="color: #1f2937;">* Resolved By:</strong> ${changedByName}
+                </p>
+                
+                <p style="color: #374151; font-size: 15px; line-height: 1.8; margin: 8px 0;">
+                  <strong style="color: #1f2937;">* Resolution Date:</strong> ${formattedDate}
+                </p>
+              </div>
+              
+              ${reason || ticket.notes?.length > 0 ? `
+              <div style="background-color: #ecfdf5; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #10b981;">
+                <h4 style="color: #065f46; font-size: 16px; margin: 0 0 10px 0; font-weight: 600;">**Resolution Notes**</h4>
+                <p style="color: #047857; font-size: 14px; line-height: 1.6; margin: 0; white-space: pre-wrap;">${reason || (ticket.notes && ticket.notes.length > 0 ? ticket.notes[ticket.notes.length - 1] : 'No notes provided')}</p>
+              </div>
+              ` : ''}
+              
+              <p style="color: #4b5563; font-size: 15px; line-height: 1.6; margin-bottom: 20px;">
+                The ticket is ready for closure or customer confirmation.
+              </p>
+              
+              <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+                <p style="color: #6b7280; font-size: 13px; line-height: 1.6; margin: 0;">
+                  Automated system message.
+                </p>
+              </div>
+              
+              <div style="margin-top: 20px; text-align: center;">
+                <p style="color: #9ca3af; font-size: 12px; margin: 0;">
+                  Regards,<br>
+                  <strong style="color: #6b7280;">Expand Machinery Support System</strong>
+                </p>
+              </div>
+            </div>
+          </div>`;
+        break;
+
+      case 'closed':
+        subject = `Ticket Closed - ${ticketNumber}`;
+        html = `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9fafb;">
+            <div style="background-color: #ffffff; border-radius: 12px; padding: 30px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+              <div style="text-align: center; margin-bottom: 30px;">
+                <img src="${process.env.APP_URL}/uploads/email.png" alt="Expand Machinery" style="max-width: 200px; height: auto; margin-bottom: 15px;" />
+              </div>
+              
+              <h2 style="color: #1f2937; font-size: 24px; margin-bottom: 20px; font-weight: 600;">Hello Admin,</h2>
+              
+              <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin-bottom: 25px;">
+                The following support ticket has been <strong>Closed</strong>.
+              </p>
+              
+              <div style="background-color: #f9fafb; padding: 20px; border-radius: 8px; margin-bottom: 25px; border-left: 4px solid #6b7280;">
+                <h3 style="color: #1f2937; font-size: 18px; margin-bottom: 15px; font-weight: 600;">**Ticket Details**</h3>
+                
+                <p style="color: #374151; font-size: 15px; line-height: 1.8; margin: 8px 0;">
+                  <strong style="color: #1f2937;">* Ticket Number:</strong> ${ticketNumber}
+                </p>
+                
+                <p style="color: #374151; font-size: 15px; line-height: 1.8; margin: 8px 0;">
+                  <strong style="color: #1f2937;">* Customer Name:</strong> ${customerName}
+                </p>
+                
+                <p style="color: #374151; font-size: 15px; line-height: 1.8; margin: 8px 0;">
+                  <strong style="color: #1f2937;">* Closed By:</strong> ${changedByName}
+                </p>
+                
+                <p style="color: #374151; font-size: 15px; line-height: 1.8; margin: 8px 0;">
+                  <strong style="color: #1f2937;">* Closed On:</strong> ${formattedDate}
+                </p>
+              </div>
+              
+              <p style="color: #4b5563; font-size: 15px; line-height: 1.6; margin-bottom: 20px;">
+                No further action is required unless the ticket is reopened.
+              </p>
+              
+              <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+                <p style="color: #6b7280; font-size: 13px; line-height: 1.6; margin: 0;">
+                  This is a system-generated notification.
+                </p>
+              </div>
+              
+              <div style="margin-top: 20px; text-align: center;">
+                <p style="color: #9ca3af; font-size: 12px; margin: 0;">
+                  Regards,<br>
+                  <strong style="color: #6b7280;">Expand Machinery Support System</strong>
+                </p>
+              </div>
+            </div>
+          </div>`;
+        break;
+
+      case 'reopen':
+      case 'reopened':
+        subject = `Ticket Reopened - ${ticketNumber}`;
+        html = `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9fafb;">
+            <div style="background-color: #ffffff; border-radius: 12px; padding: 30px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+              <div style="text-align: center; margin-bottom: 30px;">
+                <img src="${process.env.APP_URL}/uploads/email.png" alt="Expand Machinery" style="max-width: 200px; height: auto; margin-bottom: 15px;" />
+              </div>
+              
+              <h2 style="color: #1f2937; font-size: 24px; margin-bottom: 20px; font-weight: 600;">Hello Admin,</h2>
+              
+              <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin-bottom: 25px;">
+                A previously closed ticket has been <strong>Reopened</strong> by the customer or support team.
+              </p>
+              
+              <div style="background-color: #f9fafb; padding: 20px; border-radius: 8px; margin-bottom: 25px; border-left: 4px solid #7c3aed;">
+                <h3 style="color: #1f2937; font-size: 18px; margin-bottom: 15px; font-weight: 600;">**Ticket Details**</h3>
+                
+                <p style="color: #374151; font-size: 15px; line-height: 1.8; margin: 8px 0;">
+                  <strong style="color: #1f2937;">* Ticket Number:</strong> ${ticketNumber}
+                </p>
+                
+                <p style="color: #374151; font-size: 15px; line-height: 1.8; margin: 8px 0;">
+                  <strong style="color: #1f2937;">* Customer Name:</strong> ${customerName}
+                </p>
+                
+                <p style="color: #374151; font-size: 15px; line-height: 1.8; margin: 8px 0;">
+                  <strong style="color: #1f2937;">* Reopened On:</strong> ${formattedDate}
+                </p>
+              </div>
+              
+              ${reason ? `
+              <div style="background-color: #f3e8ff; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #7c3aed;">
+                <h4 style="color: #6b21a8; font-size: 16px; margin: 0 0 10px 0; font-weight: 600;">**Reason for Reopening**</h4>
+                <p style="color: #7c3aed; font-size: 14px; line-height: 1.6; margin: 0; white-space: pre-wrap;">${reason}</p>
+              </div>
+              ` : ''}
+              
+              <p style="color: #4b5563; font-size: 15px; line-height: 1.6; margin-bottom: 20px;">
+                Please review and reassign the ticket as required.
+              </p>
+              
+              <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+                <p style="color: #6b7280; font-size: 13px; line-height: 1.6; margin: 0;">
+                  This is an automated alert.
+                </p>
+              </div>
+              
+              <div style="margin-top: 20px; text-align: center;">
+                <p style="color: #9ca3af; font-size: 12px; margin: 0;">
+                  Regards,<br>
+                  <strong style="color: #6b7280;">Expand Machinery Support System</strong>
+                </p>
+              </div>
+            </div>
+          </div>`;
+        break;
+
+      default:
+        // For any other status, send a generic notification
+        subject = `Ticket Status Updated - ${ticketNumber}`;
+        html = `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9fafb;">
+            <div style="background-color: #ffffff; border-radius: 12px; padding: 30px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+              <div style="text-align: center; margin-bottom: 30px;">
+                <img src="${process.env.APP_URL}/uploads/email.png" alt="Expand Machinery" style="max-width: 200px; height: auto; margin-bottom: 15px;" />
+              </div>
+              
+              <h2 style="color: #1f2937; font-size: 24px; margin-bottom: 20px; font-weight: 600;">Hello Admin,</h2>
+              
+              <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin-bottom: 25px;">
+                A support ticket status has been updated.
+              </p>
+              
+              <div style="background-color: #f9fafb; padding: 20px; border-radius: 8px; margin-bottom: 25px; border-left: 4px solid #7c3aed;">
+                <h3 style="color: #1f2937; font-size: 18px; margin-bottom: 15px; font-weight: 600;">**Ticket Details**</h3>
+                
+                <p style="color: #374151; font-size: 15px; line-height: 1.8; margin: 8px 0;">
+                  <strong style="color: #1f2937;">* Ticket Number:</strong> ${ticketNumber}
+                </p>
+                
+                <p style="color: #374151; font-size: 15px; line-height: 1.8; margin: 8px 0;">
+                  <strong style="color: #1f2937;">* Customer Name:</strong> ${customerName}
+                </p>
+                
+                <p style="color: #374151; font-size: 15px; line-height: 1.8; margin: 8px 0;">
+                  <strong style="color: #1f2937;">* New Status:</strong> <span style="text-transform: capitalize;">${status}</span>
+                </p>
+                
+                <p style="color: #374151; font-size: 15px; line-height: 1.8; margin: 8px 0;">
+                  <strong style="color: #1f2937;">* Updated On:</strong> ${formattedDate}
+                </p>
+              </div>
+              
+              <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+                <p style="color: #6b7280; font-size: 13px; line-height: 1.6; margin: 0;">
+                  This is an automated system notification.
+                </p>
+              </div>
+              
+              <div style="margin-top: 20px; text-align: center;">
+                <p style="color: #9ca3af; font-size: 12px; margin: 0;">
+                  Regards,<br>
+                  <strong style="color: #6b7280;">Expand Machinery Support System</strong>
+                </p>
+              </div>
+            </div>
+          </div>`;
+    }
+
+    console.log('📧 Sending admin ticket status change email to:', adminEmail, 'for status:', status);
+    const result = await sendEmail(adminEmail, subject, html);
+    console.log('📧 Admin ticket status change email result:', result);
+    return result;
+  } catch (error) {
+    console.error('❌ Error sending admin ticket status change email:', error);
+    console.error('Error details:', error.message, error.stack);
     return { success: false, error: error.message };
   }
 };

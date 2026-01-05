@@ -435,7 +435,12 @@ export const verifyEmailOtp = async (req, res) => {
     try {
       await Promise.all([
         sendCustomerWelcomeEmail({ name: customer.name, email: customer.email, phone: customer.phone }),
-        sendAdminRegistrationEmail({ name: customer.name, email: customer.email, phone: customer.phone }),
+        sendAdminRegistrationEmail({ 
+          name: customer.name, 
+          email: customer.email, 
+          phone: customer.phone,
+          registrationDate: customer.createdAt || new Date()
+        }),
       ]);
     } catch (emailError) {
       console.error('Failed to send post-verification emails:', emailError);
