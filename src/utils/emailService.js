@@ -331,7 +331,7 @@ export const sendTicketCreationEmail = async (ticket, customer, agents = []) => 
                     <p><strong>Ticket Number:</strong> ${ticket.ticketNumber}</p>
                     <p><strong>Status:</strong> <span style="color: #28a745; font-weight: bold;">${ticket.status.toUpperCase()}</span></p>
                     <p><strong>Description:</strong> ${ticket.description}</p>
-                    <p><strong>Created Date:</strong> ${new Date(ticket.createdAt).toLocaleString()}</p>
+                    <p><strong>Created Date:</strong> ${new Date(ticket.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
                 </div>
                 <div style="background-color: #e3f2fd; padding: 15px; border-radius: 8px; margin-top: 20px;">
                     <p style="margin: 0; color: #1976d2;">
@@ -375,7 +375,7 @@ export const sendTicketCreationEmail = async (ticket, customer, agents = []) => 
                     <p><strong>Customer Name:</strong> ${customer.name}</p>
                     <p><strong>Description:</strong> ${ticket.description}</p>
                     <p><strong>Status:</strong> ${ticket.status}</p>
-                    <p><strong>Created Date:</strong> ${new Date(ticket.createdAt).toLocaleString()}</p>
+                    <p><strong>Created Date:</strong> ${new Date(ticket.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
                 </div>
                 <div style="text-align: center; margin-top: 30px; color: #666; font-size: 14px;">
                     <p>Please check your agent panel to take this ticket.</p>
@@ -414,16 +414,12 @@ export const sendTicketAdminNotify = async (ticket, customer) => {
       ? new Date(ticket.createdAt).toLocaleDateString('en-US', { 
           year: 'numeric', 
           month: 'long', 
-          day: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit'
+          day: 'numeric'
         })
       : new Date().toLocaleDateString('en-US', { 
           year: 'numeric', 
           month: 'long', 
-          day: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit'
+          day: 'numeric'
         });
 
     const subject = `New Support Ticket Created - ${ticket.ticketNumber}`;
@@ -601,16 +597,12 @@ export const sendAdminRegistrationEmail = async ({ name, email, phone, registrat
       ? new Date(registrationDate).toLocaleDateString('en-US', { 
           year: 'numeric', 
           month: 'long', 
-          day: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit'
+          day: 'numeric'
         })
       : new Date().toLocaleDateString('en-US', { 
           year: 'numeric', 
           month: 'long', 
-          day: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit'
+          day: 'numeric'
         });
 
     const dashboardLink = process.env.FRONTEND_URL 
@@ -759,16 +751,10 @@ export const sendTicketUpdateStatusEmail = async (ticket, customer) => {
     const ticketNumber = ticket.ticketNumber || ticket._id;
     const dateObj = new Date(ticket.updatedAt || ticket.createdAt);
     // Format date in PST timezone
-    const updatedDate = dateObj.toLocaleString('en-US', {
-      timeZone: 'America/Los_Angeles', // PST/PDT timezone
+    const updatedDate = dateObj.toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-      hour12: true,
-      timeZoneName: 'short'
+      day: 'numeric'
     });
 
     let subject = '';
@@ -1097,9 +1083,7 @@ export const sendTicketStatusChangeAdminEmail = async (ticket, customer, changed
     const formattedDate = dateObj.toLocaleDateString('en-US', { 
       year: 'numeric', 
       month: 'long', 
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+      day: 'numeric'
     });
 
     const changedByName = changedBy?.name || 'System';
