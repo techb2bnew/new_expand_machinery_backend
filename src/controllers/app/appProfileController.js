@@ -73,16 +73,17 @@ export const updateCustomer = async (req, res) => {
             }
         }
         if (phone) {
-            const phoneDigits = String(phone).replace(/\D/g, '');
-            if (phoneDigits.length < 10 || phoneDigits.length > 15) {
-                return res.status(400).json({ message: 'Phone number must be between 10 and 15 digits' });
+            const phoneDigits = String(phone).replace(/^\+1/, '').replace(/\D/g, '');
+            if (phoneDigits.length !== 10) {
+                return res.status(400).json({ message: 'Phone number must be exactly 10 digits' });
             }
             // Check if phone already exists (search by digits only, ignoring formatting)
+            const normalizedPhone = `+1${phoneDigits}`;
             const existingPhone = await User.findOne({
               $and: [
                 {
                   $or: [
-                    { phone: phoneDigits }, // Exact match for digits only
+                    { phone: normalizedPhone }, // Exact match with +1 prefix
                     { phone: { $regex: phoneDigits } } // Match if digits are contained in stored phone
                   ]
                 },
@@ -92,7 +93,7 @@ export const updateCustomer = async (req, res) => {
             if (existingPhone && String(existingPhone._id) !== String(customer._id)) {
                 return res.status(400).json({ message: 'Phone number already exists' });
             }
-            customer.phone = phoneDigits.trim(); // For 15 digits, store digits only (User model hook will handle formatting)
+            customer.phone = phoneDigits.trim(); // User model hook will add +1 automatically
         }
 
         await customer.save();
@@ -308,20 +309,21 @@ export const newProfileUpdate = async (req, res) => {
 
         // Update phone if provided
         if (phone) {
-            const phoneDigits = String(phone).replace(/\D/g, '');
-            if (phoneDigits.length < 10 || phoneDigits.length > 15) {
+            const phoneDigits = String(phone).replace(/^\+1/, '').replace(/\D/g, '');
+            if (phoneDigits.length !== 10) {
                 return res.status(400).json({ 
                     success: false,
-                    message: 'Phone number must be between 10 and 15 digits' 
+                    message: 'Phone number must be exactly 10 digits' 
                 });
             }
             
             // Check if phone already exists for another user
+            const normalizedPhone = `+1${phoneDigits}`;
             const existingPhone = await User.findOne({
                 $and: [
                     {
                         $or: [
-                            { phone: phoneDigits },
+                            { phone: normalizedPhone },
                             { phone: { $regex: phoneDigits } }
                         ]
                     },
@@ -336,7 +338,7 @@ export const newProfileUpdate = async (req, res) => {
                 });
             }
             
-            user.phone = phoneDigits.trim();
+            user.phone = phoneDigits.trim(); // User model hook will add +1 automatically
         }
 
         await user.save();

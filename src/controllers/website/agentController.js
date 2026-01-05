@@ -24,9 +24,12 @@ export const createAgent = async (req, res) => {
 
     // Check if phone number already exists (if provided)
     if (phone) {
-      const phoneDigits = String(phone).replace(/\D/g, '');
+      const phoneDigits = String(phone).replace(/^\+1/, '').replace(/\D/g, '');
+      if (phoneDigits.length !== 10) {
+        return res.status(400).json({ message: 'Phone number must be exactly 10 digits' });
+      }
       // Normalize phone number with country code for comparison
-      const normalizedPhone = phoneDigits.length === 10 ? `+1${phoneDigits}` : phone;
+      const normalizedPhone = `+1${phoneDigits}`;
       const existingPhone = await User.findOne({ phone: normalizedPhone });
       if (existingPhone) {
         return res.status(400).json({ message: 'User with this phone number already exists' });
@@ -266,8 +269,12 @@ export const updateAgent = async (req, res) => {
     }
     if (email) agent.email = email;
     if (phone !== undefined) {
-      // Normalize phone number - extract digits only, model hook will add +1 if 10 digits
-      agent.phone = phone ? String(phone).replace(/\D/g, '') : '';
+      // Normalize phone number - extract digits only, remove +1 prefix if present
+      const phoneDigits = phone ? String(phone).replace(/^\+1/, '').replace(/\D/g, '') : '';
+      if (phone && phoneDigits.length !== 10) {
+        return res.status(400).json({ message: 'Phone number must be exactly 10 digits' });
+      }
+      agent.phone = phoneDigits;
     }
     if (password && password.trim() !== '') {
       agent.password = password; // Will be hashed by pre-save hook

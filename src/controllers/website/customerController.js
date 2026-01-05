@@ -27,9 +27,9 @@ export const createCustomer = async (req, res) => {
       return res.status(400).json({ ok: false, success: false, message: 'Please provide a valid email' });
     }
 
-    const phoneDigits = String(phone).replace(/\D/g, '');
-    if (phoneDigits.length < 10 || phoneDigits.length > 15) {
-      return res.status(400).json({ ok: false, success: false, message: 'Phone number must be between 10 and 15 digits' });
+    const phoneDigits = String(phone).replace(/^\+1/, '').replace(/\D/g, '');
+    if (phoneDigits.length !== 10) {
+      return res.status(400).json({ ok: false, success: false, message: 'Phone number must be exactly 10 digits' });
     }
 
     if (password.length < 6) {
@@ -291,9 +291,9 @@ export const updateCustomer = async (req, res) => {
       customer.email = email.toLowerCase().trim();
     }
     if (phone) {
-      const phoneDigits = String(phone).replace(/\D/g, '');
-      if (phoneDigits.length < 10 || phoneDigits.length > 15) {
-        return res.status(400).json({ ok: false, success: false, message: 'Phone number must be between 10 and 15 digits' });
+      const phoneDigits = String(phone).replace(/^\+1/, '').replace(/\D/g, '');
+      if (phoneDigits.length !== 10) {
+        return res.status(400).json({ ok: false, success: false, message: 'Phone number must be exactly 10 digits' });
       }
       // Check if phone already exists (search by digits only, ignoring formatting)
       const existingPhone = await User.findOne({
