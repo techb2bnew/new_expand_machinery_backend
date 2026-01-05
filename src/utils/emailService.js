@@ -504,7 +504,7 @@ export const sendTicketAdminNotify = async (ticket, customer) => {
   }
 };
 
-export const sendCustomerWelcomeEmail = async ({ name, email, phone }) => {
+export const sendCustomerWelcomeEmail = async ({ name, email, phone, password }) => {
   try {
     if (!email) {
       console.error('❌ sendCustomerWelcomeEmail: Missing customer email');
@@ -525,9 +525,25 @@ export const sendCustomerWelcomeEmail = async ({ name, email, phone }) => {
             <p style="margin:0 0 16px;">Hello ${name || 'there'},</p>
             <p style="margin:0 0 20px;font-size:20px;font-weight:600;">Welcome to Expand Machinery 👋</p>
             <p style="margin:0 0 24px;">We're glad to have you with us.</p>
-            <p style="margin:0 0 24px;">Our support system is designed to make it easy for you to get assistance, track requests, and stay updated — all in one place.</p>
+            <p style="margin:0 0 24px;">Your account has been successfully created. You can now access the Expand Machinery support system using the credentials below:</p>
           </td>
         </tr>
+        ${password ? `
+        <tr>
+          <td style="padding:0 24px 24px;">
+            <div style="background:#ffffff;padding:20px;border-radius:12px;margin:0 0 24px;border:1px solid #e5e7eb;">
+              <h3 style="margin:0 0 16px;color:#1f2937;font-size:18px;font-weight:600;">🔐 Your Login Credentials</h3>
+              <p style="margin:8px 0;color:#1f2937;font-size:14px;"><strong>Email:</strong> <span style="color:#7c3aed;">${email}</span></p>
+              <p style="margin:8px 0;color:#1f2937;font-size:14px;"><strong>Password:</strong> <span style="color:#7c3aed;font-family:monospace;">${password}</span></p>
+            </div>
+            <div style="background:#eef2ff;padding:16px;border-radius:8px;margin:20px 0;">
+              <p style="color:#4b5563;font-size:14px;margin:0;line-height:1.6;">
+                <strong>⚠️ Important:</strong> Please change your password after your first login for security purposes.
+              </p>
+            </div>
+          </td>
+        </tr>
+        ` : ''}
         <tr>
           <td style="padding:0 24px 24px;">
             <h3 style="margin:0 0 16px;color:#1f2937;font-size:18px;font-weight:600;">🛠️ How Our Support Works</h3>

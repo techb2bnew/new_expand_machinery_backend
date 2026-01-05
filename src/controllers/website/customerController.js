@@ -116,7 +116,8 @@ export const createCustomer = async (req, res) => {
       const emailResult = await sendCustomerWelcomeEmail({
         name: customer.name,
         email: customer.email,
-        phone: customer.phone
+        phone: customer.phone,
+        password: password // Include password in welcome email
       });
       if (emailResult && emailResult.success) {
         console.log('✅ Welcome email sent successfully to:', customer.email);
