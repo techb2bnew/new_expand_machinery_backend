@@ -7,10 +7,14 @@ import { sendEmail } from '../../utils/emailService.js';
 
 export const createAgent = async (req, res) => {
   try {
-    const { firstName, lastName, email, phone, password, categoryId } = req.body;
+    const { name, email, phone, password, categoryId } = req.body;
 
-    // Combine first and last name
-    const name = `${firstName} ${lastName}`.trim();
+    // Validate name is provided
+    if (!name || !name.trim()) {
+      return res.status(400).json({ message: 'Name is required' });
+    }
+
+    const fullName = name.trim();
 
     // Check if agent already exists by email
     const existingEmail = await User.findOne({ email });
@@ -36,7 +40,7 @@ export const createAgent = async (req, res) => {
 
     // Create agent (password will be hashed by pre-save hook)
     const agent = await User.create({
-      name,
+      name: fullName,
       email,
       password,
       role: 'agent',
@@ -48,7 +52,7 @@ export const createAgent = async (req, res) => {
 
     // Activity log: created
     await logActivity(req, {
-      message: `Agent "${name}" has been added`,
+      message: `Agent "${fullName}" has been added`,
       status: 'added'
     });
 
@@ -61,7 +65,7 @@ export const createAgent = async (req, res) => {
             <p style="color: #4b5563; font-size: 16px;">Agent Account Created</p>
           </div>
           <div style="background: #f9fafb; padding: 28px; border-radius: 14px; box-shadow: 0 10px 25px rgba(124,58,237,0.08);">
-            <h2 style="color: #1f2937; font-size: 22px; margin-bottom: 16px;">Welcome ${firstName}!</h2>
+            <h2 style="color: #1f2937; font-size: 22px; margin-bottom: 16px;">Welcome ${fullName}!</h2>
             <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin-bottom: 20px;">
               Your agent account has been successfully created. You can now access the Expand Machinery support dashboard using the credentials below:
             </p>
@@ -103,7 +107,7 @@ export const createAgent = async (req, res) => {
     try {
       await sendPushNotification({
         title: 'Welcome to the Team!',
-        body: `Your agent account has been created. Welcome aboard, ${firstName}!`,
+        body: `Your agent account has been created. Welcome aboard, ${fullName}!`,
         data: {
           type: 'agent_account_created',
           agentId: agent._id.toString(),
@@ -120,8 +124,6 @@ export const createAgent = async (req, res) => {
       message: 'Agent created successfully',
       data: {
         _id: agent._id,
-        firstName,
-        lastName,
         name: agent.name,
         email: agent.email,
         phone: phone || '',
@@ -183,22 +185,17 @@ export const getAgentsList = async (req, res) => {
         hasPrevPage: page > 1,
         limit
       },
-      data: agents.map(a => {
-        const nameParts = a.name.split(' ');
-        return {
-          _id: a._id,
-          firstName: nameParts[0] || '',
-          lastName: nameParts.slice(1).join(' ') || '',
-          name: a.name,
-          email: a.email,
-          phone: a.phone || '',
-          role: a.role,
-          categoryIds: a.categoryIds,
-          status: a.status || 'offline',
-          isActive: a.isActive !== undefined ? a.isActive : true,
-          createdAt: a.createdAt
-        };
-      })
+      data: agents.map(a => ({
+        _id: a._id,
+        name: a.name,
+        email: a.email,
+        phone: a.phone || '',
+        role: a.role,
+        categoryIds: a.categoryIds,
+        status: a.status || 'offline',
+        isActive: a.isActive !== undefined ? a.isActive : true,
+        createdAt: a.createdAt
+      }))
     });
   } catch (error) {
     res.status(500).json({
@@ -219,13 +216,10 @@ export const getAgent = async (req, res) => {
       });
     }
 
-    const nameParts = agent.name.split(' ');
     res.json({
       success: true,
       data: {
         _id: agent._id,
-        firstName: nameParts[0] || '',
-        lastName: nameParts.slice(1).join(' ') || '',
         name: agent.name,
         email: agent.email,
         phone: agent.phone || '',
@@ -248,7 +242,7 @@ export const getAgent = async (req, res) => {
 export const updateAgent = async (req, res) => {
   try {
     const { id } = req.params;
-    const { firstName, lastName, email, phone, password, categoryId } = req.body;
+    const { name, email, phone, password, categoryId } = req.body;
 
     const agent = await User.findOne({ _id: id, role: 'agent' });
     if (!agent) {
@@ -267,8 +261,8 @@ export const updateAgent = async (req, res) => {
     };
 
     // Update fields
-    if (firstName && lastName) {
-      agent.name = `${firstName} ${lastName}`.trim();
+    if (name && name.trim()) {
+      agent.name = name.trim();
     }
     if (email) agent.email = email;
     if (phone !== undefined) {
@@ -316,14 +310,11 @@ export const updateAgent = async (req, res) => {
       console.error('Failed to send push notification for agent update:', pushError);
     }
 
-    const nameParts = agent.name.split(' ');
     res.json({
       success: true,
       message: 'Agent updated successfully',
       data: {
         _id: agent._id,
-        firstName: nameParts[0] || '',
-        lastName: nameParts.slice(1).join(' ') || '',
         name: agent.name,
         email: agent.email,
         phone: agent.phone || '',
@@ -482,14 +473,12 @@ export const exportAgents = async (req, res) => {
 
     // Format data for export
     const exportData = agents.map(agent => {
-      const nameParts = agent.name.split(' ');
       const categories = agent.categoryIds?.map(cat =>
         typeof cat === 'object' ? cat.name : cat
       ).join(', ') || '';
 
       return {
-        'First Name': nameParts[0] || '',
-        'Last Name': nameParts.slice(1).join(' ') || '',
+        'Full Name': agent.name,
         'Email': agent.email,
         'Phone': agent.phone || 'N/A',
         'Status': agent.status || 'offline',
