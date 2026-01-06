@@ -1462,3 +1462,76 @@ export const sendTicketStatusChangeAdminEmail = async (ticket, customer, changed
     return { success: false, error: error.message };
   }
 };
+
+export const sendTicketAssignmentEmail = async (ticket, agent, customer) => {
+  try {
+    if (!agent || !agent.email) {
+      console.error('❌ sendTicketAssignmentEmail: Missing agent email');
+      return { success: false, error: 'Missing agent email' };
+    }
+
+    const ticketNumber = ticket.ticketNumber || ticket._id;
+    const customerName = customer?.name || 'Customer';
+    const customerEmail = customer?.email || 'N/A';
+    const agentName = agent.name || 'Agent';
+    
+    const createdDate = ticket.createdAt 
+      ? new Date(ticket.createdAt).toLocaleDateString('en-US', { 
+          year: 'numeric', 
+          month: 'long', 
+          day: 'numeric'
+        })
+      : 'N/A';
+
+    const assignedDate = new Date().toLocaleDateString('en-US', { 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric'
+    });
+
+    console.log('📧 Sending ticket assignment email to agent:', agent.email, 'for ticket:', ticketNumber);
+
+    const subject = `New Ticket Assigned to You - ${ticketNumber}`;
+    
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="text-align: center; margin-bottom: 30px;">
+          <img src="${process.env.APP_URL}/uploads/email.png" alt="Expand Machinery" style="max-width: 200px; height: auto; margin-bottom: 10px; display: block; margin-left: auto; margin-right: auto;" />
+        </div>
+        <div style="background-color: #e0f2fe; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+          <h2 style="color: #075985; margin: 0;">New Ticket Assigned to You</h2>
+        </div>
+        <div style="background-color: white; padding: 20px; border: 1px solid #dee2e6; border-radius: 8px;">
+          <h3 style="color: #333; margin-top: 0;">Ticket Information</h3>
+          <p style="margin: 8px 0;"><strong>Ticket Number:</strong> ${ticketNumber}</p>
+          <p style="margin: 8px 0;"><strong>Customer Name:</strong> ${customerName}</p>
+          <p style="margin: 8px 0;"><strong>Customer Email:</strong> ${customerEmail}</p>
+          <p style="margin: 8px 0;"><strong>Status:</strong> <span style="text-transform: capitalize;">${ticket.status || 'pending'}</span></p>
+          <p style="margin: 8px 0;"><strong>Created Date:</strong> ${createdDate}</p>
+          <p style="margin: 8px 0;"><strong>Assigned Date:</strong> ${assignedDate}</p>
+          <p style="margin: 8px 0;"><strong>Description:</strong></p>
+          <div style="background-color: #f9fafb; padding: 12px; border-radius: 6px; margin: 8px 0; border: 1px solid #e5e7eb;">
+            <p style="color: #4b5563; font-size: 14px; line-height: 1.6; margin: 0; white-space: pre-wrap;">${ticket.description || 'No description provided'}</p>
+          </div>
+        </div>
+        <div style="background-color: #e3f2fd; padding: 15px; border-radius: 8px; margin-top: 20px;">
+          <p style="margin: 0; color: #1976d2;">
+            <strong>Action Required:</strong> Please review this ticket and start working on it. You can access the ticket from your agent dashboard.
+          </p>
+        </div>
+        <div style="text-align: center; margin-top: 30px; color: #666; font-size: 14px;">
+          <p>Thank you for your continued support!</p>
+          <p>This is an automated message. Please do not reply to this email.</p>
+        </div>
+      </div>
+    `;
+
+    const result = await sendEmail(agent.email, subject, html);
+    console.log('📧 Ticket assignment email result:', result);
+    return result;
+  } catch (error) {
+    console.error('❌ Error sending ticket assignment email:', error);
+    console.error('Error details:', error.message, error.stack);
+    return { success: false, error: error.message || 'Unknown error' };
+  }
+};

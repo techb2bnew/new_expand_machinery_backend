@@ -8,7 +8,7 @@ import Notification from '../../models/Notification.js';
 import mongoose from 'mongoose';
 import { getIO } from '../../socket/index.js';
 import { logActivity } from '../../utils/activityLogger.js';
-import { sendTicketCreationEmail, sendTicketAdminNotify, sendTicketUpdateStatusEmail, sendTicketStatusChangeAdminEmail } from '../../utils/emailService.js';
+import { sendTicketCreationEmail, sendTicketAdminNotify, sendTicketUpdateStatusEmail, sendTicketStatusChangeAdminEmail, sendTicketAssignmentEmail } from '../../utils/emailService.js';
 import { sendPushNotification } from '../../services/pushNotificationService.js';
 
 export const getTickets = async (req, res) => {
@@ -121,7 +121,7 @@ export const assignTicket = async (req, res) => {
       return res.status(400).json({ message: 'Invalid ticket ID format' });
     }
     const { agentId } = req.body;
-    const ticket = await Ticket.findById(id);
+    const ticket = await Ticket.findById(id).populate('customer');
     if (!ticket) {
       return res.status(404).json({ message: 'Ticket not found' });
     }
@@ -136,6 +136,9 @@ export const assignTicket = async (req, res) => {
     if (!agent) {
       return res.status(404).json({ message: 'Agent not found' });
     }
+    
+    // Get customer data for email
+    const customer = ticket.customer ? await User.findById(ticket.customer) : null;
 
     ticket.assignedAgent = agent._id;
 
@@ -314,6 +317,26 @@ export const assignTicket = async (req, res) => {
       }
     } catch (pushError) {
       console.error('Failed to send push notifications for ticket assignment:', pushError);
+    }
+
+    // Send email to assigned agent
+    try {
+      if (customer) {
+        const emailResult = await sendTicketAssignmentEmail(ticket, agent, customer);
+        if (emailResult && emailResult.success) {
+          console.log('✅ Ticket assignment email sent successfully to agent:', agent.email);
+        } else {
+          console.error('❌ Failed to send ticket assignment email. Result:', emailResult);
+          if (emailResult && emailResult.error) {
+            console.error('Email error details:', emailResult.error);
+          }
+        }
+      } else {
+        console.warn('⚠️ Customer not found for ticket, skipping assignment email');
+      }
+    } catch (emailError) {
+      console.error('❌ Exception while sending ticket assignment email to agent:', emailError);
+      console.error('Error stack:', emailError.stack);
     }
 
     res.json({ message: 'Ticket assigned successfully', ticket });
